@@ -1,0 +1,729 @@
+#-------------------------------------------------------------------------------
+# qwiic_ens160.py
+#
+# Python library for the SparkFun Qwiic ENS160, available here:
+# https://www.sparkfun.com/products/22858
+#-------------------------------------------------------------------------------
+# Written by SparkFun Electronics, October 2024
+#
+# This python library supports the SparkFun Electroncis Qwiic ecosystem
+#
+# More information on Qwiic is at https://www.sparkfun.com/qwiic
+#
+# Do you like this library? Help support SparkFun. Buy a board!
+#===============================================================================
+# Copyright (c) 2023 SparkFun Electronics
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#===============================================================================
+
+"""
+qwiic_ens160
+============
+Python module for the [SparkFun Qwiic ENS160](https://www.sparkfun.com/products/22858)
+This is a port of the existing [Arduino Library](https://github.com/sparkfun/SparkFun_Indoor_Air_Quality_Sensor-ENS160_Arduino_Library)
+This package can be used with the overall [SparkFun Qwiic Python Package](https://github.com/sparkfun/Qwiic_Py)
+New to Qwiic? Take a look at the entire [SparkFun Qwiic ecosystem](https://www.sparkfun.com/qwiic).
+"""
+
+# The Qwiic_I2C_Py platform driver is designed to work on almost any Python
+# platform, check it out here: https://github.com/sparkfun/Qwiic_I2C_Py
+import qwiic_i2c
+
+# Define the device name and I2C addresses. These are set in the class defintion
+# as class variables, making them avilable without having to create a class
+# instance. This allows higher level logic to rapidly create a index of Qwiic
+# devices at runtine
+_DEFAULT_NAME = "Qwiic ENS160" 
+
+# Some devices have multiple available addresses - this is a list of these
+# addresses. NOTE: The first address in this list is considered the default I2C
+# address for the device.
+_AVAILABLE_I2C_ADDRESS = [0x53, 0x52]
+
+# Define the class that encapsulates the device being created. All information
+# associated with this device is encapsulated by this class. The device class
+# should be the only value exported from this module.
+class QwiicENS160(object):
+    # Set default name and I2C address(es)
+    device_name         = _DEFAULT_NAME
+    available_addresses = _AVAILABLE_I2C_ADDRESS
+
+    # ENS160 register map
+    kRegPartId = 0x00
+    kRegOpMode = 0x10
+    kRegConfig = 0x11
+    kRegCommand = 0x12
+    kRegTempIn = 0x13
+    kRegRhIn = 0x15
+    kRegDeviceStatus = 0x20
+    kRegDataAqi = 0x21
+    kRegDataTvoc = 0x22
+    kRegDataEtoh = 0x22 
+    kRegDataEco2 = 0x24
+    kRegDataT = 0x30
+    kRegDataRh = 0x32
+    kRegDataMisr = 0x38
+    kRegGPRWrite0 = 0x40
+    kRegGPRWrite1 = 0x41
+    kRegGPRWrite2 = 0x42
+    kRegGPRWrite3 = 0x43
+    kRegGPRWrite4 = 0x44
+    kRegGPRWrite5 = 0x45
+    kRegGPRWrite6 = 0x46
+    kRegGPRWrite7 = 0x47
+    kRegGPRRead0 = 0x48
+    kRegGPRRead1 = 0x49
+    kRegGPRRead2 = 0x4A
+    kRegGPRRead3 = 0x4B
+    kRegGPRRead4 = 0x4C 
+    kRegGPRRead5 = 0x4D
+    kRegGPRRead6 = 0x4E
+    kRegGPRRead7 = 0x4F
+
+    # ENS160 defines and masks
+    # Part ID defines/masks
+    kShiftPartIdMSB = 8  # Part ID MSB (value 0x01)
+    kShiftPartIdLSB = 0  # Part ID LSB (value 0x60)
+
+    kMaskPartIdLSB = 0xFF << kShiftPartIdLSB
+    kMaskPartIdMSB = 0xFF << kShiftPartIdMSB
+    
+    kPartId = 0x0160
+
+    # Possible Operating Mode defines/masks
+    # Default = 0x00
+    kOpModeDeepSleep = 0x00
+    kOpModeIdle = 0x01
+    kOpModeStandard = 0x02
+    kOpModeReset = 0xF0
+    
+    # Config defines/masks
+    # Default = 0x00
+    kShiftConfigIntPol = 6  # INTn pin polarity 0: active low, 1: active high
+    kShiftConfigIntCfg = 5  # INTn Pin Drive (INT_CFG) 0: open drain, 1: push/pull
+    kShiftConfigIntGPR = 3  # INTn assert on new data in GPR reg (INTGPR)
+    kShiftConfigIntDat = 1  # INTn pin assert on new data in DATA reg (INTDAT)
+    kShiftConfigIntEn = 0   # INTn enable
+    
+    kMaskConfigIntPol = 0b1 << kShiftConfigIntPol
+    kMaskConfigIntCfg = 0b1 << kShiftConfigIntCfg
+    kMaskConfigIntGPR = 0b1 << kShiftConfigIntGPR
+    kMaskConfigIntDat = 0b1 << kShiftConfigIntDat
+    kMaskConfigIntEn = 0b1 << kShiftConfigIntEn
+
+    # Command defines/masks
+    # All commands must be issued when device is idle.
+    kCommandNop = 0x00
+    # Get Firwmware App Version - version is placed in General Purpose Read Registers as follows:
+    # GPR_READ04 - Version (Major)
+    # GPR_READ05 - Version (Minor)
+    # GPR_READ06 - Version (Release)
+    kCommandGetAppVer = 0x0E
+    kCommandClearGPR = 0xCC
+
+    # TempIn defines/masks
+    # Temperature compensation can be given to the sensor for more accurate
+    # readings.
+    # Temperature should be given in Kelvin in the following format:
+    # Value: Temperature in Kelvin * 64
+    # Converting Celsius to Kelvin = Temp + 273.15
+    # Ergo: (Temp + 273.15) * 64
+    kShiftTempInMSB = 8
+    kShiftTempInLSB = 0
+
+    kMaskTempInMSB = 0xFF << kShiftTempInMSB
+    kMaskTempInLSB = 0xFF << kShiftTempInLSB
+
+    # Rh defines/masks
+    # Relative Humidity compensation can be given to the sensor for more accurate
+    # readings.
+    # RH should be given in %rH * 512
+    kShiftRhInMsb = 8
+    kShiftRhInLsb = 0
+
+    kMaskRhInMSB = 0xFF << kShiftRhInMsb
+    kMaskRhInLSB = 0xFF << kShiftRhInLsb
+
+    # DeviceStatus defines/masks
+    kShiftDeviceStatusStatAs = 7 # indicates an OPMODE is running
+    kShiftDeviceStatusStatEr = 6 # indicates an error
+    kShiftDeviceStatusValidityFlag = 2 # 0: normal, 1: warm-up, 2: initial start-up, 3: invalid
+    kShiftDeviceStatusNewDat = 1 # new data available on DATA_x regs
+    kShiftDeviceStatusNewGpr = 0  # new data available on GPR_READx regs
+
+    kMaskDeviceStatusStatAs = 0b1 << kShiftDeviceStatusStatAs
+    kMaskDeviceStatusStatEr = 0b1 << kShiftDeviceStatusStatEr
+    kMaskDeviceStatusValidityFlag = 0b11 << kShiftDeviceStatusValidityFlag
+    kMaskDeviceStatusNewDat = 0b1 << kShiftDeviceStatusNewDat
+    kMaskDeviceStatusNewGpr = 0b1 << kShiftDeviceStatusNewGpr
+
+    # DataAqi defines/masks
+    kShiftDataAqiUba = 0 # Air quality index according to UBA
+
+    kMaskDataAqiUba = 0b11 << kShiftDataAqiUba
+
+    # DataTvoc defines/masks
+    kShiftDataTvocMsb = 8
+    kShiftDataTvocLsb = 0
+
+    kMasktDataTvocMsb = 0xFF << kShiftDataTvocMsb
+    kMaskDataTvocLsb = 0xFF << kShiftDataTvocLsb
+
+    # DataEtoh defines/masks
+    kShiftDataEtohMsb = 8
+    kShiftDataEtohLsb = 0
+    
+    kMaskDataEtohMsb = 0xFF << kShiftDataEtohMsb
+    kMaskDataEtohLsb = 0xFF << kShiftDataEtohLsb
+
+    # DataEco2 defines/masks
+    kShiftDataEco2Msb = 8
+    kShiftDataEco2Lsb = 0
+    
+    kMaskDataEco2Msb = 0xFF << kShiftDataEco2Msb
+    kMaskDataEco2Lsb = 0xFF << kShiftDataEco2Lsb
+
+    # DataT defines/masks
+    # Reports the temperature data given to TEMP_IN in the following manner:
+    # Temperature in Kelvin: Register Value / 64
+    # Converting Kelvin to Celsius =  Temperature in Kelvin - 273.15
+    # Ergo: (Register Value / 64) - 273.15
+    kShiftDataTMsb = 8
+    kShiftDataTLsb = 0
+    
+    kMaskDataTMsb = 0xFF << kShiftDataTMsb
+    kMaskDataTLsb = 0xFF << kShiftDataTLsb
+
+    # DataRh defines/masks
+    # Reports the Relative Humidity compensation given to RH_IN in the following manner
+    # RH = Register Value / 512
+    kShiftDataRhMsb = 8
+    kShiftDataRhLsb = 0
+    
+    kMaskDataRhMsb = 0xFF << kShiftDataRhMsb
+    kMaskDataRhLsb = 0xFF << kShiftDataRhLsb
+
+    # DataMisr defines/masks
+    # Gives calculated checksum of "DATA_" registers
+    kPoly = 0x1D #  0b00011101 = x^8+x^4+x^3+x^2+x^0 (x^8 is implicit)
+
+    def __init__(self, address=None, i2c_driver=None):
+        """
+        Constructor
+
+        :param address: The I2C address to use for the device
+            If not provided, the default address is used
+        :type address: int, optional
+        :param i2c_driver: An existing i2c driver object
+            If not provided, a driver object is created
+        :type i2c_driver: I2CDriver, optional
+        """
+
+        # Use address if provided, otherwise pick the default
+        if address in self.available_addresses:
+            self.address = address
+        else:
+            self.address = self.available_addresses[0]
+
+        # Load the I2C driver if one isn't provided
+        if i2c_driver is None:
+            self._i2c = qwiic_i2c.getI2CDriver()
+            if self._i2c is None:
+                print("Unable to load I2C driver for this platform.")
+                return
+        else:
+            self._i2c = i2c_driver
+
+    def is_connected(self):
+        """
+        Determines if this device is connected
+
+        :return: `True` if connected, otherwise `False`
+        :rtype: bool
+        """
+        # Check if connected by seeing if an ACK is received
+        if(self._i2c.isDeviceConnected(self.address) == False):
+            return False
+
+        prodid = self.getUnqiueID()
+
+        return prodid == self.kPartId
+
+    connected = property(is_connected)
+
+    def begin(self):
+        """
+        Initializes this device with default parameters
+
+        :return: Returns `True` if successful, otherwise `False`
+        :rtype: bool
+        """
+        # Confirm device is connected before doing anything
+        return self.is_connected()
+
+    # ////////////////////////////////////////////////////////////////////////////////
+    # General Operation
+    # 
+
+    def setOperatingMode(self, val):
+        """
+        Sets the operating mode: Deep Sleep (0x00), Idle (0x01), Standard (0x02),
+        Reset (0xF0)
+
+        :param val:  The desired operating mode to set
+        :type val: int
+        """
+        if val > self.kOpModeReset:
+            return False
+        
+        self._i2c.write_byte(self.address, self.kRegOpMode, val)
+
+        return True
+    
+    def getOperatingMode(self):
+        """
+        Gets the current operating mode: Deep Sleep (0x00), Idle (0x01), Standard
+        (0x02), Reset (0xF0)
+
+        :return: The current operating mode
+        :rtype: int
+        """
+        return self._i2c.read_byte(self.address, self.kRegOpMode)
+    
+    def getAppVer(self):
+        """
+        Retrieves the 24 bit application version of the device
+
+        :return: Application version
+        :rtype: int
+        """
+
+        # TODO: should we also write the kRegCommand reg with kCommandGetAppVer prior to this?
+        #       the c++ version of this lib did not so I won't for now...
+        version_bytes = self._i2c.read_block(self.address, self.kRegGPRRead4, 3)
+        
+        if len(version_bytes) < 3:
+            print ("Err: Failed to read all bytes in getAppVer()")
+            return -1
+
+        version = version_bytes[0]
+        version |= version_bytes[1] << 8
+        version |= version_bytes[2] << 16
+
+        return version
+    
+    def getUnqiueID(self):
+        """
+        Retrieves the 16 bit id of the device
+
+        :return: Part Id
+        :rtype: int
+        """
+        id_bytes = self._i2c.read_block(self.address, self.kRegPartId, 2) 
+
+        if len(id_bytes) < 2:
+            print ("Err: Failed to read all bytes in getUniqueID()")
+            return -1
+        
+        id = id_bytes[0]
+        id |= id_bytes[1] << 8
+
+        return id
+    
+    def configureInterrupt(self, val):
+        """
+        Changes all of the settings within the interrupt configuration register
+
+        :param val:  The desired configuration settings.
+        :type val: int
+        """
+
+        self._i2c.write_byte(self.address, self.kRegConfig, val)
+
+    def enableInterrupt(self, enable = True):
+        """
+        Enables the interrupt.
+
+        :param enable:  Turns on or off the interrupt
+        :type enable: bool
+        """
+
+        newConfig = self._i2c.read_byte(self.address, self.kRegConfig)
+
+        newConfig &= ~self.kMaskConfigIntEn
+
+        if enable:
+            newConfig |= self.kMaskConfigIntEn
+
+        self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
+
+    def setInterruptPolarity(self, activeHigh = True):
+        """
+        Changes the polarity of the interrupt: active high or active low. By default
+        this value is set to zero or active low.
+
+        :param activeHigh:  Changes active state of interrupt from high to low.
+        :type activeHigh: bool
+        """
+        newConfig = self._i2c.read_byte(self.address, self.kRegConfig)
+
+        newConfig &= ~self.kMaskConfigIntPol
+
+        if activeHigh:
+            newConfig |= self.kMaskConfigIntPol
+        
+        self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
+    
+    def getInterruptPolarity(self):
+        """
+        Retrieves the Retrieves the polarity of the physical interrupt.
+
+        :return: Part Id
+        :rtype: int
+        """
+        currentConfig = self._i2c.read_byte(self.address, self.kRegConfig)
+
+        intPol = currentConfig & self.kMaskConfigIntPol
+
+        return (intPol >> self.kShiftConfigIntPol)
+    
+    def setInterruptDrive(self, pushPull = True):
+        """
+        Changes the pin drive of the interrupt: open drain (default) to push/pull
+
+        :param pushPull:  Changes the drive of the pin.
+        :type pushPull: bool
+        """
+        newConfig = self._i2c.read_byte(self.address, self.kRegConfig)
+        
+        newConfig &= ~self.kMaskConfigIntCfg
+
+        if pushPull:
+            newConfig |= self.kMaskConfigIntCfg
+        
+        self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
+
+    
+    def setGPRInterrupt(self, enable):
+        """
+        Routes the general purporse read register signal to the interrupt pin.
+
+        :param enable: whether to turn on or off general purpose read
+        :type enable: bool
+        """
+        newConfig = self._i2c.read_byte(self.address, self.kRegConfig)
+
+        newConfig &= ~self.kMaskConfigIntGPR
+
+        if enable:
+            newConfig |= self.kMaskConfigIntGPR
+
+        self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
+    
+    # ////////////////////////////////////////////////////////////////////////////////
+    # Temperature and Humidity Compensation
+    #
+
+    def setTempCompensation(self, tempKelvin):
+        """
+        The ENS160 can use temperature data to help give more accurate sensor data.
+
+        :param tempKelvin: The given temperature in Kelvin
+        :type tempKelvin: float
+        """
+        
+        tempVal = []
+        kelvinConversion = int(tempKelvin * 64); # convert value - fixed equation pg. 29 of datasheet
+        tempVal.append(kelvinConversion & 0x00FF)
+        tempVal.append( (kelvinConversion & 0xFF00) >> 8)
+
+        self._i2c.write_block(self.address, self.kRegTempIn, tempVal)
+
+    def setTempCompensationCelsius(self, tempCelsius):
+        """
+        The ENS160 can use temperature data to help give more accurate sensor data.
+
+        :param tempCelsius: The given temperature in Celsius
+        :type tempCelsius: float
+        """
+
+        kelvinConversion = tempCelsius + 273.15
+        self.setTempCompensation(kelvinConversion)
+
+    def setRHCompensation(self, humidity):
+        """
+        The ENS160 can use relative Humidiy data to help give more accurate sensor data.
+
+        :param humidity: The given relative humidity
+        :type humidity: float
+        """
+        
+        humidityConversion = int(humidity * 512) # convert value - fixed equation pg. 29 in datasheet.
+        
+        tempVal = []
+        tempVal.append(humidityConversion & 0x00FF)
+        tempVal.append( (humidityConversion & 0xFF00) >> 8)
+
+        self._i2c.write_block(self.address, self.kRegRhIn, tempVal)
+
+    # ////////////////////////////////////////////////////////////////////////////////
+    # Device Status
+    # 
+
+    def checkDataStatus(self):
+        """
+        This checks the if the NEWDAT bit is high indicating that new data is ready
+        to be read. The bit is cleared when data has been read from their registers.
+
+        :return: Whether NEWDAT bit is high
+        :rtype: bool
+        """
+
+        currentStatus = self._i2c.read_byte(self.address, self.kRegDeviceStatus)
+        
+        currentStatus &= self.kMaskDeviceStatusNewDat
+
+        if currentStatus == self.kMaskDeviceStatusNewDat:
+            return True
+
+        return False
+
+    def checkGPRStatus(self):
+        """
+        This checks the if the NEWGPR bit is high indicating that there is data in
+        the general purpose read registers. The bit is cleared the relevant registers
+        have been read.
+
+        :return: Whether NEWGPR bit is high
+        :rtype: bool
+        """
+        currentStatus = self._i2c.read_byte(self.address, self.kRegDeviceStatus)
+        
+        currentStatus &= self.kMaskDeviceStatusNewGpr
+
+        if currentStatus == self.kMaskDeviceStatusNewGpr:
+            return True
+
+        return False
+
+    def getFlags(self):
+        """
+        This checks the status "flags" of the device (0-3).
+
+        :return: The current status flag (0: normal, 1: warm-up, 2: initial start-up, 3: invalid, -1: error)
+        :rtype: int
+        """
+        
+        currentStatus = self._i2c.read_byte(self.address, self.kRegDeviceStatus)
+
+        flags = (currentStatus & self.kMaskDeviceStatusValidityFlag) >> self.kShiftDeviceStatusValidityFlag
+        
+        # possible flags: 0: normal, 1: warm-up, 2: initial start-up, 3: invalid
+        if flags not in [0, 1, 2, 3]:
+            return -1
+        
+        return flags
+
+    def checkOperationStatus(self):
+        """
+        Checks the bit that indicates if an operation mode is running i.e. the device
+        is not off.
+
+        :return: Whether NEWGPR bit is high
+        :rtype: bool
+        """
+        currentStatus = self._i2c.read_byte(self.address, self.kRegDeviceStatus)
+        
+        currentStatus &= self.kMaskDeviceStatusStatAs
+
+        if currentStatus == self.kMaskDeviceStatusStatAs:
+            return True
+
+        return False
+
+    def getOperationError(self):
+        """
+        Checks the bit that indicates if an invalid operating mode has been selected.
+
+        :return: Whether an OpMode error is selected
+        :rtype: bool
+        """
+        currentStatus = self._i2c.read_byte(self.address, self.kRegDeviceStatus)
+        
+        currentStatus &= self.kMaskDeviceStatusStatEr
+
+        if currentStatus == self.kMaskDeviceStatusStatEr:
+            return True
+
+        return False
+
+    # ////////////////////////////////////////////////////////////////////////////////
+    # Data Registers
+    # 
+
+    def getAQI(self, ):
+        """
+        This reports the calculated Air Quality Index according to UBA which is a
+        value between 1-5. The AQI-UBA is a guideline developed by the German Federal
+        Environmental Agency and is widely referenced and adopted by many countries
+        and organizations.
+        
+        1 - Excellent, 2 - Good, 3 - Moderate, 4 - Poor, 5 - Unhealthy.
+
+        :return: Qir Quality Index
+        :rtype: int
+        """
+        currentDataAqi = self._i2c.read_byte(self.address, self.kRegDataAqi)
+        
+        AqiUba = currentDataAqi & self.kMaskDataAqiUba
+
+        return (AqiUba >> self.kShiftDataAqiUba)
+
+
+    def getTVOC(self):
+        """
+        This reports the Total Volatile Organic Compounds in ppb (parts per billion)
+
+        :return: Total Volatile Organic Compounds in ppb
+        :rtype: int
+        """
+        
+        tvocBytes = self._i2c.read_block(self.address, self.kRegDataTvoc, 2)
+
+        if len(tvocBytes) < 2:
+            print ("Err: Failed to read all bytes in getTVOC()")
+
+        tvoc = tvocBytes[0]
+        tvoc |= tvocBytes[1] << 8
+
+        return tvoc
+
+    def getETOH(self):
+        """
+        This reports the ehtanol concentration in ppb (parts per billion). According
+        to the datasheet this is a "virtual mirror" of the ethanol-calibrated TVOC
+        register, which is why they share the same register.
+
+        :return: Ethanol concentration in ppb
+        :rtype: int
+        """
+        
+        ethanolBytes = self._i2c.read_block(self.address, self.kRegDataEtoh, 2)
+
+        if len(ethanolBytes) < 2:
+            print ("Err: Failed to read all bytes in getETOH()")
+
+        ethanol = ethanolBytes[0]
+        ethanol |= ethanolBytes[1] << 8
+
+        return ethanol
+
+    def getECO2(self):
+        """
+        This reports the CO2 concentration in ppm (parts per million) based on the
+        detected VOCs and hydrogen.
+
+        :return: CO2 concentration in ppm
+        :rtype: int
+        """
+        
+        ecoBytes = self._i2c.read_block(self.address, self.kRegDataEco2, 2)
+
+        if len(ecoBytes) < 2:
+            print ("Err: Failed to read all bytes in getECO2()")
+
+        eco = ecoBytes[0]
+        eco |= ecoBytes[1] << 8
+
+        return eco
+        
+    def getTempKelvin(self):
+        """
+        This reports the temperature compensation value given to the sensor in
+        Kelvin.
+
+        :return: Temperature compensation in Kelvin
+        :rtype: float
+        """
+        
+        tempBytes = self._i2c.read_block(self.address, self.kRegDataT, 2)
+
+        if len(tempBytes) < 2:
+            print ("Err: Failed to read all bytes in getTemp()")
+
+        tempConversion = tempBytes[0]
+        tempConversion |= tempBytes[1] << 8
+
+        temperature = float(tempConversion) / 64.0
+
+        return temperature
+
+    def getTempCelsius(self):
+        """
+        This reports the temperature compensation value given to the sensor in
+        Celsius.
+
+        :return: Temperature compensation in Celsius
+        :rtype: float
+        """
+
+        temperature = self.getTempKelvin()
+
+        return (temperature - 273.15)
+
+    def getRH(self):
+        """
+        This reports the relative humidity compensation value given to the sensor.
+
+        :return: Relative Humidty
+        :rtype: float
+        """
+
+        rhBytes = self._i2c.read_block(self.address, self.kRegDataRh, 2)
+
+        if len(rhBytes) < 2:
+            print ("Err: Failed to read all bytes in getRH()")
+
+        rh = rhBytes[0]
+        rh |= rhBytes[1] << 8
+
+        return rh / 512.0
+    
+    def getRawResistance(self):
+        """
+        For certain gases the raw resistance values of the hot plates can be 
+        used for post processing. More information can be found within the datasheet.
+
+        :return: Raw Resistance
+        :rtype: float
+        """
+
+        resBytes = self._i2c.read_block(self.address, self.kRegDataRh, 2)
+
+        if len(resBytes) < 2:
+            print ("Err: Failed to read all bytes in getRawResistance()")
+
+        res = resBytes[0]
+        res |= resBytes[1] << 8
+
+        resistance = 2 ** (res / 2048) 
+
+        return resistance
+

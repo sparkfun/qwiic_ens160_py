@@ -33,15 +33,15 @@
 # SOFTWARE.
 #===============================================================================
 
-import qwiic_template # TODO Import correct package
+import qwiic_ens160
 import sys
 
 def runExample():
 	# TODO Replace template and title
-	print("\nQwiic Template Example 1 - Title\n")
+	print("\nQwiic ENS160 Example 1 - Basic\n")
 
 	# Create instance of device
-	myDevice = qwiic_template.QwiicTemplate() # TODO update as needed
+	myDevice = qwiic_ens160.QwiicENS160()
 
 	# Check if it's connected
 	if myDevice.is_connected() == False:
