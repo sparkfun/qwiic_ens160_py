@@ -55,7 +55,7 @@ def runExample():
 
 	myEns.setOperatingMode(myEns.kOpModeReset)
 
-	sleep(0.1)
+	sleep(0.5)
 
 	# Device needs to be set to idle to apply any settings.
 	# myEns.setOperatingMode(myEns.kOpModeIdle)

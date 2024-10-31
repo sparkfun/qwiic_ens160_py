@@ -420,6 +420,21 @@ class QwiicENS160(object):
         
         self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
 
+    def setDataInterrupt(self, enable):
+        """
+        Routes the data ready signal to the interrupt pin.
+
+        :param enable: enables or disables data ready on 
+        :type enable: bool
+        """
+        newConfig = self._i2c.read_byte(self.address, self.kRegConfig)
+        
+        newConfig &= ~self.kMaskConfigIntDat
+
+        if enable:
+            newConfig |= self.kMaskConfigIntDat
+        
+        self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
     
     def setGPRInterrupt(self, enable):
         """
@@ -712,10 +727,10 @@ class QwiicENS160(object):
         used for post processing. More information can be found within the datasheet.
 
         :return: Raw Resistance
-        :rtype: float
+        :rtype: int
         """
 
-        resBytes = self._i2c.read_block(self.address, self.kRegDataRh, 2)
+        resBytes = self._i2c.read_block(self.address, self.kRegGPRRead6, 2)
 
         if len(resBytes) < 2:
             print ("Err: Failed to read all bytes in getRawResistance()")
@@ -723,7 +738,7 @@ class QwiicENS160(object):
         res = resBytes[0]
         res |= resBytes[1] << 8
 
-        resistance = 2 ** (res / 2048) 
+        resistance = int(2 ** int(res / 2048)) 
 
         return resistance
 

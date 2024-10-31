@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# qwiic_template_ex1_title.py TODO: replace template and title
+# qwiic_template_ex6_burn_in.py
 #
-# TODO: Add description for this example
+#  This example demonstrates the warm up phase of the ENS160. After the "burn-in" phase 
+#  the readings from the ENS160 will be more accurate. Before any data is given, the  
+#  the sensor waits for the status flag to return "Initial Start Up" or "Normal Operation".
+#  This time take approximately three minutes.
 #-------------------------------------------------------------------------------
-# Written by SparkFun Electronics, TODO: month and year
+# Written by SparkFun Electronics, October 2024
 #
 # This python library supports the SparkFun Electroncis Qwiic ecosystem
 #
@@ -35,24 +38,69 @@
 
 import qwiic_ens160
 import sys
+from time import sleep
 
 def runExample():
 	# TODO Replace template and title
-	print("\nQwiic ENS160 Example 1 - Basic\n")
+	print("\nQwiic ENS160 Example 6 - Burn In\n")
 
 	# Create instance of device
-	myDevice = qwiic_ens160.QwiicENS160()
+	myEns = qwiic_ens160.QwiicENS160()
 
 	# Check if it's connected
-	if myDevice.is_connected() == False:
+	if myEns.is_connected() == False:
 		print("The device isn't connected to the system. Please check your connection", \
 			file=sys.stderr)
 		return
 
 	# Initialize the device
-	myDevice.begin()
+	myEns.begin()
 
-	# TODO Add basic example code
+	myEns.setOperatingMode(myEns.kOpModeReset)
+
+	sleep(0.1)
+
+	# Device needs to be set to idle to apply any settings.
+	# myEns.setOperatingMode(myEns.kOpModeIdle)
+
+	# Set to standard operation
+	# Others include kOpModeDeepSleep and kOpModeIdle
+	myEns.setOperatingMode(myEns.kOpModeStandard)
+
+	# There are four values here: 
+	# 0 - Operating ok: Standard Operation
+	# 1 - Warm-up: occurs for 3 minutes after power-on.
+	# 2 - Initial Start-up: Occurs for the first hour of operation.
+	# 	  and only once in sensor's lifetime.
+	# 3 - No Valid Output
+	print("Waiting for the device to warm up, this will take ~3 minutes")
+	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ")
+
+	while True:
+		ensStatus = myEns.getFlags()
+
+		print(str(ensStatus))
+
+		if (ensStatus == 2) or (ensStatus == 0):
+			print("ENS160 is warmed up! ")
+			break
+
+		if ensStatus == 3: 
+			print("Invalid Ouput...Freezing.")
+			while True: 
+				pass
+		
+		sleep(0.25)
+
+	while True:
+		if myEns.checkDataStatus():
+			print("Air Quality Index (1-5) : {}".format(myEns.getAQI()))
+			print("Total Volatile Organic Compounds (ppb): {}".format(myEns.getTVOC()))
+			print("CO2 concentration (ppm): {}".format(myEns.getECO2()))
+			print("\n------------------------\n")
+		
+		sleep(0.2)
+
 
 if __name__ == '__main__':
 	try:

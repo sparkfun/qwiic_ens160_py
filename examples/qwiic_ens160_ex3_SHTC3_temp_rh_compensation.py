@@ -1,10 +1,18 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# qwiic_template_ex1_title.py TODO: replace template and title
+# qwiic_template_ex3_temp_rh_compensation.py
+# 
+# TODO: NOTE: THIS IS A PLACEHOLDER UNTIL THE LIBRARY HERE IS IMPLEMENTED: https://github.com/sparkfun/Qwiic_SHTC3_Py
 #
-# TODO: Add description for this example
+#  This example shows how to give the ENS160 Temperature and Relative Humidity
+# Data for compensation. Note that the values that are given for compensation are not
+# populated in their registers until the Air Quality Sensor is set to "Standard" operation
+# and when data is ready i.e. the data ready bit is set. Also note that there will be some 
+# rounding of the temperature and relative humidity values when they're given to the sensor
+# and again when they're read back. 
+#
 #-------------------------------------------------------------------------------
-# Written by SparkFun Electronics, TODO: month and year
+# Written by SparkFun Electronics, October 2024
 #
 # This python library supports the SparkFun Electroncis Qwiic ecosystem
 #
@@ -38,21 +46,23 @@ import sys
 
 def runExample():
 	# TODO Replace template and title
-	print("\nQwiic ENS160 Example 1 - Basic\n")
+	print("\nQwiic ENS160 Example 3 - Humidity and Temperature Sensor Compensation - SHTC3\n")
 
 	# Create instance of device
-	myDevice = qwiic_ens160.QwiicENS160()
+	myEns = qwiic_ens160.QwiicENS160()
 
 	# Check if it's connected
-	if myDevice.is_connected() == False:
+	if myEns.is_connected() == False:
 		print("The device isn't connected to the system. Please check your connection", \
 			file=sys.stderr)
 		return
 
 	# Initialize the device
-	myDevice.begin()
+	myEns.begin()
 
-	# TODO Add basic example code
+	# NOTE: 
+
+	
 
 if __name__ == '__main__':
 	try:

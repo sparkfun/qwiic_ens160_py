@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# qwiic_template_ex1_title.py TODO: replace template and title
+# qwiic_ens160_ex4_BME280_temp_rh_compensation.py
 #
-# TODO: Add description for this example
+#  This example shows how to give the ENS160 Temperature and Relative Humidity
+#  Data for compensation with the BME280. Note that the values that are given for compensation are not
+#  populated in their registers until the Air Quality Sensor is set to "Standard" operation
+#  and when data is ready (i.e. the data ready bit is set). Also note that there will be some 
+#  rounding of the temperature and relative humidity values when they're given to the sensor
+#  and again when they're read back. 
 #-------------------------------------------------------------------------------
-# Written by SparkFun Electronics, TODO: month and year
+# Written by SparkFun Electronics, October 2024
 #
 # This python library supports the SparkFun Electroncis Qwiic ecosystem
 #
@@ -34,25 +39,84 @@
 #===============================================================================
 
 import qwiic_ens160
+import qwiic_bme280
 import sys
+from time import sleep
 
 def runExample():
-	# TODO Replace template and title
-	print("\nQwiic ENS160 Example 1 - Basic\n")
+	print("\nQwiic ENS160 Example 4 - Humidity and Temperature Sensor Compensation - BME280\n")
 
-	# Create instance of device
-	myDevice = qwiic_ens160.QwiicENS160()
+	# Create instance of Air Quality Sensor
+	myEns = qwiic_ens160.QwiicENS160()
 
 	# Check if it's connected
-	if myDevice.is_connected() == False:
-		print("The device isn't connected to the system. Please check your connection", \
+	if myEns.is_connected() == False:
+		print("The ENS device isn't connected to the system. Please check your connection", \
 			file=sys.stderr)
 		return
 
 	# Initialize the device
-	myDevice.begin()
+	myEns.begin()
 
-	# TODO Add basic example code
+	# Create instance of Humidity and Temperature Sensor
+	myBme = qwiic_bme280.QwiicBme280()
+
+	# Check if it's connected
+	if myBme.is_connected() == False:
+		print("The BME device isn't connected to the system. Please check your connection", \
+			file=sys.stderr)
+		return
+
+	# Initialize the device
+	myBme.begin()
+
+	# Fetch Humidity and temperature for compensation
+	rh = myBme.humidity
+	tempC = myBme.temperature_celsius
+	print("Relative Humidity: {}".format(rh))
+	print("Temperature (Celcius): {}".format(tempC))
+	
+	# ENS setup and compensation:
+	myEns.setOperatingMode(myEns.kOpModeReset)
+
+	sleep(0.1)
+
+	myEns.setTempCompensationCelsius(tempC)
+	myEns.setRHCompensation(rh)
+
+	sleep(0.5)
+
+	# Set to standard operation
+	# Others include kOpModeDeepSleep and kOpModeIdle
+	myEns.setOperatingMode(myEns.kOpModeStandard)
+	
+	# There are four values here: 
+	# 0 - Operating ok: Standard Operation
+	# 1 - Warm-up: occurs for 3 minutes after power-on.
+	# 2 - Initial Start-up: Occurs for the first hour of operation.
+	# 	  and only once in sensor's lifetime.
+	# 3 - No Valid Output
+	ensStatus = myEns.getFlags()
+	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): {}".format(ensStatus))
+
+	printed_compensation = False
+
+	while True:
+		if myEns.checkDataStatus():
+			if printed_compensation == False:
+				print("---------------------------")
+				print("Compensation Relative Humidity (%): {}".format(myEns.getRH()))
+				print("---------------------------")
+				print("Compensation Temperature (Celsius): {}".format(myEns.getTempCelsius()))
+				print("---------------------------")
+				printed_compensation = True
+				sleep(0.5)
+		
+			print("Air Quality Index (1-5) : {}".format(myEns.getAQI()))
+			print("Total Volatile Organic Compounds (ppb): {}".format(myEns.getTVOC()))
+			print("CO2 concentration (ppm): {}".format(myEns.getECO2()))
+			
+		sleep(0.2)
 
 if __name__ == '__main__':
 	try:

@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# qwiic_template_ex1_title.py TODO: replace template and title
+# qwiic_template_ex7_raw_resistance.py
 #
-# TODO: Add description for this example
+#  This example retreieves the raw resistance of the plates. This would be used
+#  in the case that you want to process these values yourself.
 #-------------------------------------------------------------------------------
-# Written by SparkFun Electronics, TODO: month and year
+# Written by SparkFun Electronics, October 2024
 #
 # This python library supports the SparkFun Electroncis Qwiic ecosystem
 #
@@ -35,25 +36,52 @@
 
 import qwiic_ens160
 import sys
+from time import sleep
 
 def runExample():
 	# TODO Replace template and title
-	print("\nQwiic ENS160 Example 1 - Basic\n")
+	print("\nQwiic ENS160 Example 7 - Raw Resistance\n")
 
 	# Create instance of device
-	myDevice = qwiic_ens160.QwiicENS160()
+	myEns = qwiic_ens160.QwiicENS160()
 
 	# Check if it's connected
-	if myDevice.is_connected() == False:
+	if myEns.is_connected() == False:
 		print("The device isn't connected to the system. Please check your connection", \
 			file=sys.stderr)
 		return
 
 	# Initialize the device
-	myDevice.begin()
+	myEns.begin()
 
-	# TODO Add basic example code
+	myEns.setOperatingMode(myEns.kOpModeReset)
 
+	sleep(0.1)
+
+	# Device needs to be set to idle to apply any settings.
+	# myEns.setOperatingMode(myEns.kOpModeIdle)
+
+	# Set to standard operation
+	# Others include kOpModeDeepSleep and kOpModeIdle
+	myEns.setOperatingMode(myEns.kOpModeStandard)
+	
+	# There are four values here: 
+	# 0 - Operating ok: Standard Operation
+	# 1 - Warm-up: occurs for 3 minutes after power-on.
+	# 2 - Initial Start-up: Occurs for the first hour of operation.
+	# 	  and only once in sensor's lifetime.
+	# 3 - No Valid Output
+
+	ensStatus = myEns.getFlags()
+	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): {}".format(ensStatus))
+	
+	while True:
+		if myEns.checkDataStatus():
+			resValue = myEns.getRawResistance()
+			print("Resistance Value: {}".format(resValue))
+		
+		sleep(0.2)
+	
 if __name__ == '__main__':
 	try:
 		runExample()
