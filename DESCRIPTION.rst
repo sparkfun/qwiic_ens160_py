@@ -1,4 +1,4 @@
-Qwiic <Example Package Title>
+Qwiic ENS160
 =============================================
 
-This is a short description of this package.
+Python library package and examples for the SparkFun ENS160 Indoor Air Quality Sensor.

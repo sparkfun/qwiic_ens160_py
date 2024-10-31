@@ -1,7 +1,7 @@
 
-Example One - <Does This>
+Example One - Basic Sensor Readings
 ---------------------------
-.. literalinclude:: ../examples/qwiic_ex1.py
-    :caption: examples/qwiic_ex1.py
+.. literalinclude:: ../examples/qwiic_ens160_ex1_basic.py
+    :caption: examples/qwiic_ens160_ex1_basic.py
     :linenos:
 
