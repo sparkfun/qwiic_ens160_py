@@ -7,7 +7,11 @@
 #  populated in their registers until the Air Quality Sensor is set to "Standard" operation
 #  and when data is ready (i.e. the data ready bit is set). Also note that there will be some 
 #  rounding of the temperature and relative humidity values when they're given to the sensor
-#  and again when they're read back. 
+#  and again when they're read back.
+# 
+# SparkFun Environmental Combo Breakout: https://www.sparkfun.com/products/22858
+# SparkFun Atmospheric Sensor Breakout: https://www.sparkfun.com/products/15440
+# 
 #-------------------------------------------------------------------------------
 # Written by SparkFun Electronics, October 2024
 #
@@ -17,7 +21,7 @@
 #
 # Do you like this library? Help support SparkFun. Buy a board!
 #===============================================================================
-# Copyright (c) 2023 SparkFun Electronics
+# Copyright (c) 2024 SparkFun Electronics
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy 
 # of this software and associated documentation files (the "Software"), to deal 
@@ -39,7 +43,7 @@
 #===============================================================================
 
 import qwiic_ens160
-import qwiic_bme280
+import qwiic_bme280 # https://github.com/sparkfun/Qwiic_BME280_Py/
 import sys
 from time import sleep
 
@@ -77,18 +81,18 @@ def runExample():
 	print("Temperature (Celcius): {}".format(tempC))
 	
 	# ENS setup and compensation:
-	myEns.setOperatingMode(myEns.kOpModeReset)
+	myEns.set_operating_mode(myEns.kOpModeReset)
 
 	sleep(0.1)
 
-	myEns.setTempCompensationCelsius(tempC)
-	myEns.setRHCompensation(rh)
+	myEns.set_temp_compensation_celsius(tempC)
+	myEns.set_rh_compensation(rh)
 
 	sleep(0.5)
 
 	# Set to standard operation
 	# Others include kOpModeDeepSleep and kOpModeIdle
-	myEns.setOperatingMode(myEns.kOpModeStandard)
+	myEns.set_operating_mode(myEns.kOpModeStandard)
 	
 	# There are four values here: 
 	# 0 - Operating ok: Standard Operation
@@ -96,25 +100,26 @@ def runExample():
 	# 2 - Initial Start-up: Occurs for the first hour of operation.
 	# 	  and only once in sensor's lifetime.
 	# 3 - No Valid Output
-	ensStatus = myEns.getFlags()
+	ensStatus = myEns.get_flags()
 	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): {}".format(ensStatus))
 
-	printed_compensation = False
+	# Wait for the RH and Temp compensation to be set and ready to read
+	while not myEns.check_data_status():
+		pass
+	
+	# Read out the RH and Temp compensation actually used by the device
+	print("---------------------------")
+	print("Compensation Relative Humidity (%): ", myEns.get_rh())
+	print("---------------------------")
+	print("Compensation Temperature (Celsius): ", myEns.get_temp_celsius())
+	print("---------------------------")
 
+	# Print the compensated values from the ENS160
 	while True:
-		if myEns.checkDataStatus():
-			if printed_compensation == False:
-				print("---------------------------")
-				print("Compensation Relative Humidity (%): {}".format(myEns.getRH()))
-				print("---------------------------")
-				print("Compensation Temperature (Celsius): {}".format(myEns.getTempCelsius()))
-				print("---------------------------")
-				printed_compensation = True
-				sleep(0.5)
-		
-			print("Air Quality Index (1-5) : {}".format(myEns.getAQI()))
-			print("Total Volatile Organic Compounds (ppb): {}".format(myEns.getTVOC()))
-			print("CO2 concentration (ppm): {}".format(myEns.getECO2()))
+		if myEns.check_data_status():		
+			print("Air Quality Index (1-5) : ", myEns.get_aqi())
+			print("Total Volatile Organic Compounds (ppb): ", myEns.get_tvoc())
+			print("CO2 concentration (ppm): ", myEns.get_eco2())
 			
 		sleep(0.2)
 

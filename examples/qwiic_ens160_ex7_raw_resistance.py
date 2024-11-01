@@ -13,7 +13,7 @@
 #
 # Do you like this library? Help support SparkFun. Buy a board!
 #===============================================================================
-# Copyright (c) 2023 SparkFun Electronics
+# Copyright (c) 2024 SparkFun Electronics
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy 
 # of this software and associated documentation files (the "Software"), to deal 
@@ -54,16 +54,13 @@ def runExample():
 	# Initialize the device
 	myEns.begin()
 
-	myEns.setOperatingMode(myEns.kOpModeReset)
+	myEns.set_operating_mode(myEns.kOpModeReset)
 
 	sleep(0.1)
 
-	# Device needs to be set to idle to apply any settings.
-	# myEns.setOperatingMode(myEns.kOpModeIdle)
-
 	# Set to standard operation
 	# Others include kOpModeDeepSleep and kOpModeIdle
-	myEns.setOperatingMode(myEns.kOpModeStandard)
+	myEns.set_operating_mode(myEns.kOpModeStandard)
 	
 	# There are four values here: 
 	# 0 - Operating ok: Standard Operation
@@ -72,13 +69,13 @@ def runExample():
 	# 	  and only once in sensor's lifetime.
 	# 3 - No Valid Output
 
-	ensStatus = myEns.getFlags()
-	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): {}".format(ensStatus))
+	ensStatus = myEns.get_flags()
+	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ", ensStatus)
 	
 	while True:
-		if myEns.checkDataStatus():
-			resValue = myEns.getRawResistance()
-			print("Resistance Value: {}".format(resValue))
+		if myEns.check_data_status():
+			res_value = myEns.get_raw_resistance()
+			print("Resistance Value: ", res_value)
 		
 		sleep(0.2)
 	

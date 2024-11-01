@@ -12,7 +12,7 @@
 #
 # Do you like this library? Help support SparkFun. Buy a board!
 #===============================================================================
-# Copyright (c) 2023 SparkFun Electronics
+# Copyright (c) 2024 SparkFun Electronics
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy 
 # of this software and associated documentation files (the "Software"), to deal 
@@ -53,16 +53,14 @@ def runExample():
 	# Initialize the device
 	myEns.begin()
 
-	myEns.setOperatingMode(myEns.kOpModeReset)
+	# Reset the indoor air quality sensor's settings.
+	myEns.set_operating_mode(myEns.kOpModeReset)
 
-	sleep(0.5)
-
-	# Device needs to be set to idle to apply any settings.
-	# myEns.setOperatingMode(myEns.kOpModeIdle)
+	sleep(0.1)
 
 	# Set to standard operation
 	# Others include kOpModeDeepSleep and kOpModeIdle
-	myEns.setOperatingMode(myEns.kOpModeStandard)
+	myEns.set_operating_mode(myEns.kOpModeStandard)
 	
 	# There are four values here: 
 	# 0 - Operating ok: Standard Operation
@@ -71,15 +69,15 @@ def runExample():
 	# 	  and only once in sensor's lifetime.
 	# 3 - No Valid Output
 
-	ensStatus = myEns.getFlags()
-	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): {}".format(ensStatus))
+	ensStatus = myEns.get_flags()
+	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ", ensStatus)
 	
 	while True:
-		if myEns.checkDataStatus():
-			print("Air Quality Index (1-5) : {}".format(myEns.getAQI()))
-			print("Total Volatile Organic Compounds (ppb): {}".format(myEns.getTVOC()))
-			print("CO2 concentration (ppm): {}".format(myEns.getECO2()))
-			print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): {}".format(myEns.getFlags()))
+		if myEns.check_data_status():
+			print("Air Quality Index (1-5) : ", myEns.get_aqi())
+			print("Total Volatile Organic Compounds (ppb): ", myEns.get_tvoc())
+			print("CO2 concentration (ppm): ", myEns.get_eco2())
+			print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ", myEns.get_flags())
 			print("\n------------------------\n")
 		
 		sleep(0.2)

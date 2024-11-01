@@ -2,7 +2,7 @@
 # qwiic_ens160.py
 #
 # Python library for the SparkFun Qwiic ENS160, available here:
-# https://www.sparkfun.com/products/22858
+# https://www.sparkfun.com/products/20844
 #-------------------------------------------------------------------------------
 # Written by SparkFun Electronics, October 2024
 #
@@ -12,7 +12,7 @@
 #
 # Do you like this library? Help support SparkFun. Buy a board!
 #===============================================================================
-# Copyright (c) 2023 SparkFun Electronics
+# Copyright (c) 2024 SparkFun Electronics
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 """
 qwiic_ens160
 ============
-Python module for the [SparkFun Qwiic ENS160](https://www.sparkfun.com/products/22858)
+Python module for the [SparkFun Qwiic ENS160](https://www.sparkfun.com/products/20844)
 This is a port of the existing [Arduino Library](https://github.com/sparkfun/SparkFun_Indoor_Air_Quality_Sensor-ENS160_Arduino_Library)
 This package can be used with the overall [SparkFun Qwiic Python Package](https://github.com/sparkfun/Qwiic_Py)
 New to Qwiic? Take a look at the entire [SparkFun Qwiic ecosystem](https://www.sparkfun.com/qwiic).
@@ -98,13 +98,6 @@ class QwiicENS160(object):
     kRegGPRRead7 = 0x4F
 
     # ENS160 defines and masks
-    # Part ID defines/masks
-    kShiftPartIdMSB = 8  # Part ID MSB (value 0x01)
-    kShiftPartIdLSB = 0  # Part ID LSB (value 0x60)
-
-    kMaskPartIdLSB = 0xFF << kShiftPartIdLSB
-    kMaskPartIdMSB = 0xFF << kShiftPartIdMSB
-    
     kPartId = 0x0160
 
     # Possible Operating Mode defines/masks
@@ -138,29 +131,6 @@ class QwiicENS160(object):
     kCommandGetAppVer = 0x0E
     kCommandClearGPR = 0xCC
 
-    # TempIn defines/masks
-    # Temperature compensation can be given to the sensor for more accurate
-    # readings.
-    # Temperature should be given in Kelvin in the following format:
-    # Value: Temperature in Kelvin * 64
-    # Converting Celsius to Kelvin = Temp + 273.15
-    # Ergo: (Temp + 273.15) * 64
-    kShiftTempInMSB = 8
-    kShiftTempInLSB = 0
-
-    kMaskTempInMSB = 0xFF << kShiftTempInMSB
-    kMaskTempInLSB = 0xFF << kShiftTempInLSB
-
-    # Rh defines/masks
-    # Relative Humidity compensation can be given to the sensor for more accurate
-    # readings.
-    # RH should be given in %rH * 512
-    kShiftRhInMsb = 8
-    kShiftRhInLsb = 0
-
-    kMaskRhInMSB = 0xFF << kShiftRhInMsb
-    kMaskRhInLSB = 0xFF << kShiftRhInLsb
-
     # DeviceStatus defines/masks
     kShiftDeviceStatusStatAs = 7 # indicates an OPMODE is running
     kShiftDeviceStatusStatEr = 6 # indicates an error
@@ -174,51 +144,15 @@ class QwiicENS160(object):
     kMaskDeviceStatusNewDat = 0b1 << kShiftDeviceStatusNewDat
     kMaskDeviceStatusNewGpr = 0b1 << kShiftDeviceStatusNewGpr
 
+    kValidityFlagNormal = 0
+    kValidityFlagWarmUp = 1
+    kValidityFlagStartUp = 2
+    kValidityFlagInvalid = 3
+
     # DataAqi defines/masks
     kShiftDataAqiUba = 0 # Air quality index according to UBA
 
     kMaskDataAqiUba = 0b11 << kShiftDataAqiUba
-
-    # DataTvoc defines/masks
-    kShiftDataTvocMsb = 8
-    kShiftDataTvocLsb = 0
-
-    kMasktDataTvocMsb = 0xFF << kShiftDataTvocMsb
-    kMaskDataTvocLsb = 0xFF << kShiftDataTvocLsb
-
-    # DataEtoh defines/masks
-    kShiftDataEtohMsb = 8
-    kShiftDataEtohLsb = 0
-    
-    kMaskDataEtohMsb = 0xFF << kShiftDataEtohMsb
-    kMaskDataEtohLsb = 0xFF << kShiftDataEtohLsb
-
-    # DataEco2 defines/masks
-    kShiftDataEco2Msb = 8
-    kShiftDataEco2Lsb = 0
-    
-    kMaskDataEco2Msb = 0xFF << kShiftDataEco2Msb
-    kMaskDataEco2Lsb = 0xFF << kShiftDataEco2Lsb
-
-    # DataT defines/masks
-    # Reports the temperature data given to TEMP_IN in the following manner:
-    # Temperature in Kelvin: Register Value / 64
-    # Converting Kelvin to Celsius =  Temperature in Kelvin - 273.15
-    # Ergo: (Register Value / 64) - 273.15
-    kShiftDataTMsb = 8
-    kShiftDataTLsb = 0
-    
-    kMaskDataTMsb = 0xFF << kShiftDataTMsb
-    kMaskDataTLsb = 0xFF << kShiftDataTLsb
-
-    # DataRh defines/masks
-    # Reports the Relative Humidity compensation given to RH_IN in the following manner
-    # RH = Register Value / 512
-    kShiftDataRhMsb = 8
-    kShiftDataRhLsb = 0
-    
-    kMaskDataRhMsb = 0xFF << kShiftDataRhMsb
-    kMaskDataRhLsb = 0xFF << kShiftDataRhLsb
 
     # DataMisr defines/masks
     # Gives calculated checksum of "DATA_" registers
@@ -282,7 +216,7 @@ class QwiicENS160(object):
     # General Operation
     # 
 
-    def setOperatingMode(self, val):
+    def set_operating_mode(self, val):
         """
         Sets the operating mode: Deep Sleep (0x00), Idle (0x01), Standard (0x02),
         Reset (0xF0)
@@ -290,14 +224,14 @@ class QwiicENS160(object):
         :param val:  The desired operating mode to set
         :type val: int
         """
-        if val > self.kOpModeReset:
+        if (val > self.kOpModeReset) or (val < self.kOpModeDeepSleep):
             return False
         
         self._i2c.write_byte(self.address, self.kRegOpMode, val)
 
         return True
     
-    def getOperatingMode(self):
+    def get_operating_mode(self):
         """
         Gets the current operating mode: Deep Sleep (0x00), Idle (0x01), Standard
         (0x02), Reset (0xF0)
@@ -307,7 +241,7 @@ class QwiicENS160(object):
         """
         return self._i2c.read_byte(self.address, self.kRegOpMode)
     
-    def getAppVer(self):
+    def get_app_ver(self):
         """
         Retrieves the 24 bit application version of the device
 
@@ -318,10 +252,6 @@ class QwiicENS160(object):
         # TODO: should we also write the kRegCommand reg with kCommandGetAppVer prior to this?
         #       the c++ version of this lib did not so I won't for now...
         version_bytes = self._i2c.read_block(self.address, self.kRegGPRRead4, 3)
-        
-        if len(version_bytes) < 3:
-            print ("Err: Failed to read all bytes in getAppVer()")
-            return -1
 
         version = version_bytes[0]
         version |= version_bytes[1] << 8
@@ -329,7 +259,7 @@ class QwiicENS160(object):
 
         return version
     
-    def getUnqiueID(self):
+    def get_unique_id(self):
         """
         Retrieves the 16 bit id of the device
 
@@ -338,16 +268,12 @@ class QwiicENS160(object):
         """
         id_bytes = self._i2c.read_block(self.address, self.kRegPartId, 2) 
 
-        if len(id_bytes) < 2:
-            print ("Err: Failed to read all bytes in getUniqueID()")
-            return -1
-        
         id = id_bytes[0]
         id |= id_bytes[1] << 8
 
         return id
     
-    def configureInterrupt(self, val):
+    def configure_interrupt(self, val):
         """
         Changes all of the settings within the interrupt configuration register
 
@@ -357,7 +283,7 @@ class QwiicENS160(object):
 
         self._i2c.write_byte(self.address, self.kRegConfig, val)
 
-    def enableInterrupt(self, enable = True):
+    def enable_interrupt(self, enable=True):
         """
         Enables the interrupt.
 
@@ -374,7 +300,7 @@ class QwiicENS160(object):
 
         self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
 
-    def setInterruptPolarity(self, activeHigh = True):
+    def set_interrupt_polarity(self, activeHigh = True):
         """
         Changes the polarity of the interrupt: active high or active low. By default
         this value is set to zero or active low.
@@ -391,11 +317,11 @@ class QwiicENS160(object):
         
         self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
     
-    def getInterruptPolarity(self):
+    def get_interrupt_polarity(self):
         """
         Retrieves the Retrieves the polarity of the physical interrupt.
 
-        :return: Part Id
+        :return: Interrupt polarity (0: active low, 1: active high)
         :rtype: int
         """
         currentConfig = self._i2c.read_byte(self.address, self.kRegConfig)
@@ -404,7 +330,7 @@ class QwiicENS160(object):
 
         return (intPol >> self.kShiftConfigIntPol)
     
-    def setInterruptDrive(self, pushPull = True):
+    def set_interrupt_drive(self, pushPull = True):
         """
         Changes the pin drive of the interrupt: open drain (default) to push/pull
 
@@ -420,7 +346,7 @@ class QwiicENS160(object):
         
         self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
 
-    def setDataInterrupt(self, enable):
+    def set_data_interrupt(self, enable):
         """
         Routes the data ready signal to the interrupt pin.
 
@@ -436,7 +362,7 @@ class QwiicENS160(object):
         
         self._i2c.write_byte(self.address, self.kRegConfig, newConfig)
     
-    def setGPRInterrupt(self, enable):
+    def set_gpr_interrupt(self, enable):
         """
         Routes the general purporse read register signal to the interrupt pin.
 
@@ -456,7 +382,7 @@ class QwiicENS160(object):
     # Temperature and Humidity Compensation
     #
 
-    def setTempCompensation(self, tempKelvin):
+    def set_temp_compensation(self, tempKelvin):
         """
         The ENS160 can use temperature data to help give more accurate sensor data.
 
@@ -464,14 +390,14 @@ class QwiicENS160(object):
         :type tempKelvin: float
         """
         
-        tempVal = []
+        tempVal = [None] * 2
         kelvinConversion = int(tempKelvin * 64); # convert value - fixed equation pg. 29 of datasheet
-        tempVal.append(kelvinConversion & 0x00FF)
-        tempVal.append( (kelvinConversion & 0xFF00) >> 8)
+        tempVal[0](kelvinConversion & 0x00FF)
+        tempVal[1]( (kelvinConversion & 0xFF00) >> 8)
 
         self._i2c.write_block(self.address, self.kRegTempIn, tempVal)
 
-    def setTempCompensationCelsius(self, tempCelsius):
+    def set_temp_compensation_celsius(self, tempCelsius):
         """
         The ENS160 can use temperature data to help give more accurate sensor data.
 
@@ -482,7 +408,7 @@ class QwiicENS160(object):
         kelvinConversion = tempCelsius + 273.15
         self.setTempCompensation(kelvinConversion)
 
-    def setRHCompensation(self, humidity):
+    def set_rh_compensation(self, humidity):
         """
         The ENS160 can use relative Humidiy data to help give more accurate sensor data.
 
@@ -492,9 +418,9 @@ class QwiicENS160(object):
         
         humidityConversion = int(humidity * 512) # convert value - fixed equation pg. 29 in datasheet.
         
-        tempVal = []
-        tempVal.append(humidityConversion & 0x00FF)
-        tempVal.append( (humidityConversion & 0xFF00) >> 8)
+        tempVal = [None] * 2
+        tempVal[0](humidityConversion & 0x00FF)
+        tempVal[1]( (humidityConversion & 0xFF00) >> 8)
 
         self._i2c.write_block(self.address, self.kRegRhIn, tempVal)
 
@@ -502,7 +428,7 @@ class QwiicENS160(object):
     # Device Status
     # 
 
-    def checkDataStatus(self):
+    def check_data_status(self):
         """
         This checks the if the NEWDAT bit is high indicating that new data is ready
         to be read. The bit is cleared when data has been read from their registers.
@@ -520,7 +446,7 @@ class QwiicENS160(object):
 
         return False
 
-    def checkGPRStatus(self):
+    def check_gpr_status(self):
         """
         This checks the if the NEWGPR bit is high indicating that there is data in
         the general purpose read registers. The bit is cleared the relevant registers
@@ -538,11 +464,11 @@ class QwiicENS160(object):
 
         return False
 
-    def getFlags(self):
+    def get_flags(self):
         """
         This checks the status "flags" of the device (0-3).
 
-        :return: The current status flag (0: normal, 1: warm-up, 2: initial start-up, 3: invalid, -1: error)
+        :return: The current status flag (0: normal, 1: warm-up, 2: initial start-up, 3: invalid)
         :rtype: int
         """
         
@@ -550,13 +476,9 @@ class QwiicENS160(object):
 
         flags = (currentStatus & self.kMaskDeviceStatusValidityFlag) >> self.kShiftDeviceStatusValidityFlag
         
-        # possible flags: 0: normal, 1: warm-up, 2: initial start-up, 3: invalid
-        if flags not in [0, 1, 2, 3]:
-            return -1
-        
         return flags
 
-    def checkOperationStatus(self):
+    def check_operation_status(self):
         """
         Checks the bit that indicates if an operation mode is running i.e. the device
         is not off.
@@ -573,7 +495,7 @@ class QwiicENS160(object):
 
         return False
 
-    def getOperationError(self):
+    def get_operation_error(self):
         """
         Checks the bit that indicates if an invalid operating mode has been selected.
 
@@ -593,7 +515,7 @@ class QwiicENS160(object):
     # Data Registers
     # 
 
-    def getAQI(self, ):
+    def get_aqi(self):
         """
         This reports the calculated Air Quality Index according to UBA which is a
         value between 1-5. The AQI-UBA is a guideline developed by the German Federal
@@ -607,12 +529,12 @@ class QwiicENS160(object):
         """
         currentDataAqi = self._i2c.read_byte(self.address, self.kRegDataAqi)
         
-        AqiUba = currentDataAqi & self.kMaskDataAqiUba
+        aqiUba = currentDataAqi & self.kMaskDataAqiUba
 
-        return (AqiUba >> self.kShiftDataAqiUba)
+        return (aqiUba >> self.kShiftDataAqiUba)
 
 
-    def getTVOC(self):
+    def get_tvoc(self):
         """
         This reports the Total Volatile Organic Compounds in ppb (parts per billion)
 
@@ -622,15 +544,12 @@ class QwiicENS160(object):
         
         tvocBytes = self._i2c.read_block(self.address, self.kRegDataTvoc, 2)
 
-        if len(tvocBytes) < 2:
-            print ("Err: Failed to read all bytes in getTVOC()")
-
         tvoc = tvocBytes[0]
         tvoc |= tvocBytes[1] << 8
 
         return tvoc
 
-    def getETOH(self):
+    def get_etoh(self):
         """
         This reports the ehtanol concentration in ppb (parts per billion). According
         to the datasheet this is a "virtual mirror" of the ethanol-calibrated TVOC
@@ -642,15 +561,12 @@ class QwiicENS160(object):
         
         ethanolBytes = self._i2c.read_block(self.address, self.kRegDataEtoh, 2)
 
-        if len(ethanolBytes) < 2:
-            print ("Err: Failed to read all bytes in getETOH()")
-
         ethanol = ethanolBytes[0]
         ethanol |= ethanolBytes[1] << 8
 
         return ethanol
 
-    def getECO2(self):
+    def get_eco2(self):
         """
         This reports the CO2 concentration in ppm (parts per million) based on the
         detected VOCs and hydrogen.
@@ -661,15 +577,12 @@ class QwiicENS160(object):
         
         ecoBytes = self._i2c.read_block(self.address, self.kRegDataEco2, 2)
 
-        if len(ecoBytes) < 2:
-            print ("Err: Failed to read all bytes in getECO2()")
-
         eco = ecoBytes[0]
         eco |= ecoBytes[1] << 8
 
         return eco
         
-    def getTempKelvin(self):
+    def get_temp_kelvin(self):
         """
         This reports the temperature compensation value given to the sensor in
         Kelvin.
@@ -680,17 +593,14 @@ class QwiicENS160(object):
         
         tempBytes = self._i2c.read_block(self.address, self.kRegDataT, 2)
 
-        if len(tempBytes) < 2:
-            print ("Err: Failed to read all bytes in getTemp()")
-
         tempConversion = tempBytes[0]
         tempConversion |= tempBytes[1] << 8
 
-        temperature = float(tempConversion) / 64.0
+        temperature = float(tempConversion) / 64.0 # Formula as described on pg. 32 of datasheet.
 
         return temperature
 
-    def getTempCelsius(self):
+    def get_temp_celsius(self):
         """
         This reports the temperature compensation value given to the sensor in
         Celsius.
@@ -703,7 +613,7 @@ class QwiicENS160(object):
 
         return (temperature - 273.15)
 
-    def getRH(self):
+    def get_rh(self):
         """
         This reports the relative humidity compensation value given to the sensor.
 
@@ -713,15 +623,12 @@ class QwiicENS160(object):
 
         rhBytes = self._i2c.read_block(self.address, self.kRegDataRh, 2)
 
-        if len(rhBytes) < 2:
-            print ("Err: Failed to read all bytes in getRH()")
-
         rh = rhBytes[0]
         rh |= rhBytes[1] << 8
 
-        return rh / 512.0
+        return rh / 512.0 # Formula as described on pg. 33 of datasheet.
     
-    def getRawResistance(self):
+    def get_raw_resistance(self):
         """
         For certain gases the raw resistance values of the hot plates can be 
         used for post processing. More information can be found within the datasheet.
@@ -732,13 +639,10 @@ class QwiicENS160(object):
 
         resBytes = self._i2c.read_block(self.address, self.kRegGPRRead6, 2)
 
-        if len(resBytes) < 2:
-            print ("Err: Failed to read all bytes in getRawResistance()")
-
         res = resBytes[0]
         res |= resBytes[1] << 8
 
-        resistance = int(2 ** int(res / 2048)) 
+        resistance = int(2 ** int(res / 2048)) # Formula as described on page 13 of datasheet.
 
         return resistance
 

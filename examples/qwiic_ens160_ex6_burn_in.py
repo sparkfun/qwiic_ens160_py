@@ -15,7 +15,7 @@
 #
 # Do you like this library? Help support SparkFun. Buy a board!
 #===============================================================================
-# Copyright (c) 2023 SparkFun Electronics
+# Copyright (c) 2024 SparkFun Electronics
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy 
 # of this software and associated documentation files (the "Software"), to deal 
@@ -56,16 +56,13 @@ def runExample():
 	# Initialize the device
 	myEns.begin()
 
-	myEns.setOperatingMode(myEns.kOpModeReset)
+	myEns.set_operating_mode(myEns.kOpModeReset)
 
 	sleep(0.1)
 
-	# Device needs to be set to idle to apply any settings.
-	# myEns.setOperatingMode(myEns.kOpModeIdle)
-
 	# Set to standard operation
 	# Others include kOpModeDeepSleep and kOpModeIdle
-	myEns.setOperatingMode(myEns.kOpModeStandard)
+	myEns.set_operating_mode(myEns.kOpModeStandard)
 
 	# There are four values here: 
 	# 0 - Operating ok: Standard Operation
@@ -76,27 +73,31 @@ def runExample():
 	print("Waiting for the device to warm up, this will take ~3 minutes")
 	print("Gas Sensor Status Flag (0 - Standard, 1 - Warm up, 2 - Initial Start Up): ")
 
-	while True:
-		ensStatus = myEns.getFlags()
+	# Wait for the sensor to warm up before we enter our main loop 
+	warming_up = True
+	while warming_up:
+		print("Waiting for the device to warm up...")
+		ensStatus = myEns.get_flags()
 
 		print(str(ensStatus))
-
-		if (ensStatus == 2) or (ensStatus == 0):
+	
+		if (ensStatus == myEns.kValidityFlagStartUp) or (ensStatus == myEns.kValidityFlagNormal):
 			print("ENS160 is warmed up! ")
-			break
+			warming_up = False
 
-		if ensStatus == 3: 
+		if ensStatus == myEns.kValidityFlagInvalid: 
 			print("Invalid Ouput...Freezing.")
 			while True: 
 				pass
 		
-		sleep(0.25)
+		sleep(1)
 
+	# Now enter main loop
 	while True:
-		if myEns.checkDataStatus():
-			print("Air Quality Index (1-5) : {}".format(myEns.getAQI()))
-			print("Total Volatile Organic Compounds (ppb): {}".format(myEns.getTVOC()))
-			print("CO2 concentration (ppm): {}".format(myEns.getECO2()))
+		if myEns.check_data_status():
+			print("Air Quality Index (1-5) : ", myEns.get_aqi())
+			print("Total Volatile Organic Compounds (ppb): ", myEns.get_tvoc())
+			print("CO2 concentration (ppm): ", myEns.get_eco2())
 			print("\n------------------------\n")
 		
 		sleep(0.2)
