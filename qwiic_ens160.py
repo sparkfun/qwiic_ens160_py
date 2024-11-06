@@ -196,7 +196,7 @@ class QwiicENS160(object):
         if(self._i2c.isDeviceConnected(self.address) == False):
             return False
 
-        prodid = self.getUnqiueID()
+        prodid = self.get_unique_id()
 
         return prodid == self.kPartId
 
@@ -392,8 +392,8 @@ class QwiicENS160(object):
         
         tempVal = [None] * 2
         kelvinConversion = int(tempKelvin * 64); # convert value - fixed equation pg. 29 of datasheet
-        tempVal[0](kelvinConversion & 0x00FF)
-        tempVal[1]( (kelvinConversion & 0xFF00) >> 8)
+        tempVal[0] = (kelvinConversion & 0x00FF)
+        tempVal[1] = ( (kelvinConversion & 0xFF00) >> 8)
 
         self._i2c.write_block(self.address, self.kRegTempIn, tempVal)
 
@@ -406,7 +406,7 @@ class QwiicENS160(object):
         """
 
         kelvinConversion = tempCelsius + 273.15
-        self.setTempCompensation(kelvinConversion)
+        self.set_temp_compensation(kelvinConversion)
 
     def set_rh_compensation(self, humidity):
         """
@@ -419,8 +419,8 @@ class QwiicENS160(object):
         humidityConversion = int(humidity * 512) # convert value - fixed equation pg. 29 in datasheet.
         
         tempVal = [None] * 2
-        tempVal[0](humidityConversion & 0x00FF)
-        tempVal[1]( (humidityConversion & 0xFF00) >> 8)
+        tempVal[0] = (humidityConversion & 0x00FF)
+        tempVal[1] = ( (humidityConversion & 0xFF00) >> 8)
 
         self._i2c.write_block(self.address, self.kRegRhIn, tempVal)
 
@@ -609,7 +609,7 @@ class QwiicENS160(object):
         :rtype: float
         """
 
-        temperature = self.getTempKelvin()
+        temperature = self.get_temp_kelvin()
 
         return (temperature - 273.15)
 
