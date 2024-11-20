@@ -25,17 +25,14 @@ Table of Contents
    :caption: Examples
 
    ex1
-   ex3
-   ex4
-   ex6
-   ex7
+   ex2
 
 .. toctree::
    :caption: Other Links
 
 	SparkFun <https://sparkfun.com>
-   SparkFun Indoor Air Quality Sensor ENS160 <https://www.sparkfun.com/products/20844>
-	GitHub <https://github.com/sparkfun/Qwiic_ENS160_Py>
+   SparkFun Environmental Combo Breakout CCS811/BME280 <https://www.sparkfun.com/products/14348>
+	GitHub <https://github.com/sparkfun/Qwiic_BME280_Py>
 	SparkFun qwiic <https://www.sparkfun.com/qwiic>
 
 	

@@ -1,5 +1,5 @@
 API Reference
 ==============
 
-.. automodule:: qwiic_ens160
+.. automodule:: qwiic_<example_name>
    :members:

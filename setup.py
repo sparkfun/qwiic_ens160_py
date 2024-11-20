@@ -47,14 +47,14 @@ with io.open(path.join(here, "DESCRIPTION.rst"), encoding="utf-8") as f:
 
 setup(
 
-    name='sparkfun_qwiic_ens160',
+    name='sparkfun_qwiic_<example_name>',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
     version='1.0.0',
 
-    description='SparkFun Electronics qwiic ENS160 package',
+    description='SparkFun Electronics qwiic <example_name> package',
     long_description=long_description,
 
     # The project's main homepage.
@@ -98,6 +98,8 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    py_modules=["qwiic_ens160"],
+    py_modules=["qwiic_<example_name>"],
+
+    },
 
 )
