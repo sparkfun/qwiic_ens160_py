@@ -634,7 +634,7 @@ class QwiicENS160(object):
         used for post processing. More information can be found within the datasheet.
 
         :return: Raw Resistance
-        :rtype: int
+        :rtype: float
         """
 
         resBytes = self._i2c.read_block(self.address, self.kRegGPRRead6, 2)
@@ -642,7 +642,7 @@ class QwiicENS160(object):
         res = resBytes[0]
         res |= resBytes[1] << 8
 
-        resistance = int(2 ** int(res / 2048)) # Formula as described on page 13 of datasheet.
+        resistance = 2 ** (res / 2048) # Formula as described on page 13 of datasheet.
 
         return resistance
 
