@@ -249,13 +249,21 @@ class QwiicENS160(object):
         :rtype: int
         """
 
-        # TODO: should we also write the kRegCommand reg with kCommandGetAppVer prior to this?
-        #       the c++ version of this lib did not so I won't for now...
+        old_mode = self.get_operating_mode()
+        self.set_operating_mode(self.kOpModeIdle)
+        self._i2c.write_byte(self.address, self.kRegCommand, self.kCommandClearGPR)
+        self._i2c.write_byte(self.address, self.kRegCommand, self.kCommandGetAppVer)
+
+        while not self.check_gpr_status():
+            pass
+
         version_bytes = self._i2c.read_block(self.address, self.kRegGPRRead4, 3)
 
         version = version_bytes[0]
         version |= version_bytes[1] << 8
         version |= version_bytes[2] << 16
+
+        self.set_operating_mode(old_mode)
 
         return version
     
