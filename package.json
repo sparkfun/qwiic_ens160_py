@@ -1,0 +1,8 @@
+{
+    "urls": [
+      ["qwiic_ens160_py_examples/qwiic_ens160_ex1_basic.py", "github:sparkfun/qwiic_ens160_py/examples/qwiic_ens160_ex1_basic.py"],
+      ["qwiic_ens160_py_examples/qwiic_ens160_ex4_BME280_temp_rh_compensation.py", "github:sparkfun/qwiic_ens160_py/examples/qwiic_ens160_ex4_BME280_temp_rh_compensation.py"],
+      ["qwiic_ens160_py_examples/qwiic_ens160_ex6_burn_in.py", "github:sparkfun/qwiic_ens160_py/examples/qwiic_ens160_ex6_burn_in.py"],
+      ["qwiic_ens160_py_examples/qwiic_ens160_ex7_raw_resistance.py", "github:sparkfun/qwiic_ens160_py/examples/qwiic_ens160_ex7_raw_resistance.py"]
+    ],
+None}
